@@ -1,1 +1,1 @@
-A simple camera exposure calculator for cameras using manual settings including: Shutter speed, ISO, aperture. Set the lighting conditions, set the ISO, Set the shutter and the calcualtor will work out the correct aperture. 
+A simple camera exposure calculator for cameras using manual settings including: Shutter speed, ISO, aperture. Set the lighting conditions, set the ISO, Set the shutter and the calculator will work out the correct aperture. 
