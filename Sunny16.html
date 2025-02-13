@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sunny 16 Rule Calculator</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("calculate").addEventListener("click", calculateAperture);
+        });
+        
+        function calculateAperture() {
+            const iso = parseInt(document.getElementById("iso").value);
+            // We store shutter as the denominator only (e.g., "250" for 1/250)
+            const shutterDenominator = parseFloat(document.getElementById("shutter").value);
+            const lightingCondition = document.getElementById("lightingCondition").value;
+            
+            // Basic validation
+            if (isNaN(iso) || iso <= 0 || isNaN(shutterDenominator) || shutterDenominator <= 0) {
+                document.getElementById("apertureValue").innerText = 
+                    "Invalid input. Make sure ISO and shutter speed are valid.";
+                return;
+            }
+            
+            // Convert from "250" to 1/250
+            const shutterSpeed = 1 / shutterDenominator;
+            
+            // Sunny16 baseline: 1/ISO at f/16
+            const baseShutter = 1 / iso;
+            
+            // Number of stops difference between your shutter speed and the baseline
+            const stopDifference = Math.log2(shutterSpeed / baseShutter);
+            
+            // Lighting offsets (in stops) relative to “brightSun” => f/16
+            // Negative => bigger aperture (lower f-number)
+            // Positive => smaller aperture (higher f-number)
+            const lightingOffsets = {
+                // This means f/22 baseline for bright snow/sand
+                "brightSnowSand": +1,
+                // Classic “Sunny 16”
+                "brightSun": 0,
+                // We changed this from -1 to -2 so you get f/11 at 1/250, ISO 400
+                "lightOvercast": -2,
+                // The others now follow roughly 1-stop increments
+                "overcast": -3,
+                "heavyOvercast": -4,
+                "sunset": -5
+            };
+            
+            const conditionOffset = lightingOffsets[lightingCondition] || 0;
+            const totalStops = stopDifference + conditionOffset;
+            
+            // Actual f-number from f/16
+            // f = 16 * (sqrt(2))^(totalStops)
+            let fNumber = 16 * Math.pow(Math.sqrt(2), totalStops);
+            
+            // Snap to the nearest standard full-stop aperture
+            const standardFStops = [1.4, 2, 2.8, 4, 5.6, 8, 11, 16, 22, 32, 45, 64];
+            let closestFStop = standardFStops[0];
+            let minDiff = Infinity;
+            
+            for (let i = 0; i < standardFStops.length; i++) {
+                let diff = Math.abs(standardFStops[i] - fNumber);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestFStop = standardFStops[i];
+                }
+            }
+            
+            document.getElementById("apertureValue").innerText = `f/${closestFStop}`;
+        }
+    </script>
+</head>
+<body>
+    <h1>Sunny 16 Rule Calculator</h1>
+    
+    <!-- Lighting condition first, as requested -->
+    <label for="lightingCondition">Lighting Condition:</label>
+    <select id="lightingCondition">
+        <option value="brightSnowSand">Bright Snow/Sand</option>
+        <option value="brightSun" selected>Bright Sun (Sunny 16)</option>
+        <option value="lightOvercast">Light Overcast</option>
+        <option value="overcast">Overcast</option>
+        <option value="heavyOvercast">Heavy Overcast</option>
+        <option value="sunset">Sunset / Golden Hour</option>
+    </select>
+    <br><br>
+    
+    <label for="iso">ISO:</label>
+    <input type="number" id="iso" value="400" min="50" step="50">
+    <br><br>
+    
+    <label for="shutter">Shutter Speed (1/x):</label>
+    <select id="shutter">
+        <option value="15">1/15</option>
+        <option value="30">1/30</option>
+        <option value="60">1/60</option>
+        <option value="125">1/125</option>
+        <option value="250" selected>1/250</option>
+        <option value="500">1/500</option>
+        <option value="1000">1/1000</option>
+        <option value="2000">1/2000</option>
+        <option value="4000">1/4000</option>
+    </select>
+    <br><br>
+    
+    <button id="calculate">Calculate</button>
+    <p>Recommended Aperture: <span id="apertureValue"></span></p>
+</body>
+</html>
