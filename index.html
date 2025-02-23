@@ -1,108 +1,209 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Sunny 16 Rule Calculator</title>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById("calculate").addEventListener("click", calculateAperture);
-        });
-        
-        function calculateAperture() {
-            const iso = parseInt(document.getElementById("iso").value);
-            // We store shutter as the denominator only (e.g., "250" for 1/250)
-            const shutterDenominator = parseFloat(document.getElementById("shutter").value);
-            const lightingCondition = document.getElementById("lightingCondition").value;
-            
-            // Basic validation
-            if (isNaN(iso) || iso <= 0 || isNaN(shutterDenominator) || shutterDenominator <= 0) {
-                document.getElementById("apertureValue").innerText = 
-                    "Invalid input. Make sure ISO and shutter speed are valid.";
-                return;
-            }
-            
-            // Convert from "250" to 1/250
-            const shutterSpeed = 1 / shutterDenominator;
-            
-            // Sunny16 baseline: 1/ISO at f/16
-            const baseShutter = 1 / iso;
-            
-            // Number of stops difference between your shutter speed and the baseline
-            const stopDifference = Math.log2(shutterSpeed / baseShutter);
-            
-            // Lighting offsets (in stops) relative to “brightSun” => f/16
-            // Negative => bigger aperture (lower f-number)
-            // Positive => smaller aperture (higher f-number)
-            const lightingOffsets = {
-                // This means f/22 baseline for bright snow/sand
-                "brightSnowSand": +1,
-                // Classic “Sunny 16”
-                "brightSun": 0,
-                // We changed this from -1 to -2 so you get f/11 at 1/250, ISO 400
-                "lightOvercast": -2,
-                // The others now follow roughly 1-stop increments
-                "overcast": -3,
-                "heavyOvercast": -4,
-                "sunset": -5
-            };
-            
-            const conditionOffset = lightingOffsets[lightingCondition] || 0;
-            const totalStops = stopDifference + conditionOffset;
-            
-            // Actual f-number from f/16
-            // f = 16 * (sqrt(2))^(totalStops)
-            let fNumber = 16 * Math.pow(Math.sqrt(2), totalStops);
-            
-            // Snap to the nearest standard full-stop aperture
-            const standardFStops = [1.4, 2, 2.8, 4, 5.6, 8, 11, 16, 22, 32, 45, 64];
-            let closestFStop = standardFStops[0];
-            let minDiff = Infinity;
-            
-            for (let i = 0; i < standardFStops.length; i++) {
-                let diff = Math.abs(standardFStops[i] - fNumber);
-                if (diff < minDiff) {
-                    minDiff = diff;
-                    closestFStop = standardFStops[i];
-                }
-            }
-            
-            document.getElementById("apertureValue").innerText = `f/${closestFStop}`;
-        }
-    </script>
+  <meta charset="UTF-8" />
+  <title>Sunny 16 Rule Calculator</title>
+  <!-- Google Fonts for a snazzy title font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    /* Reset some default margins and paddings */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: sans-serif;
+      /* A nice gradient background */
+      background: linear-gradient(135deg, #ebf8e1 0%, #daf5ee 100%);
+      color: #333;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .calculator-container {
+      background-color: white;
+      max-width: 400px;
+      width: 100%;
+      margin: 1rem auto;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      color: #4A4A4A;
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+
+    input[type="number"],
+    select {
+      margin-top: 0.5rem;
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    button {
+      margin-top: 1.5rem;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      background: #87ceeb;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #5bb1dd;
+    }
+
+    button img {
+      width: 20px;
+      height: 20px;
+    }
+
+    p {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    #apertureValue {
+      font-weight: bold;
+      color: #e74c3c;
+    }
+  </style>
 </head>
 <body>
-    <h1>Sunny 16 Rule Calculator</h1>
-    
-    <!-- Lighting condition first, as requested -->
+  <div class="calculator-container">
+    <h1>Sunny 16 Calculator</h1>
+
+    <!-- Lighting condition first -->
     <label for="lightingCondition">Lighting Condition:</label>
     <select id="lightingCondition">
-        <option value="brightSnowSand">Bright Snow/Sand</option>
-        <option value="brightSun" selected>Bright Sun (Sunny 16)</option>
-        <option value="lightOvercast">Light Overcast</option>
-        <option value="overcast">Overcast</option>
-        <option value="heavyOvercast">Heavy Overcast</option>
-        <option value="sunset">Sunset / Golden Hour</option>
+      <option value="brightSnowSand">Bright Snow/Sand</option>
+      <option value="brightSun" selected>Bright Sun (Sunny 16)</option>
+      <option value="lightOvercast">Light Overcast</option>
+      <option value="overcast">Overcast</option>
+      <option value="heavyOvercast">Heavy Overcast</option>
+      <option value="sunset">Sunset / Golden Hour</option>
+      <!-- New inside / low light option -->
+      <option value="insideLowLight">Inside / Low Light</option>
     </select>
-    <br><br>
-    
+
     <label for="iso">ISO:</label>
     <input type="number" id="iso" value="400" min="50" step="50">
-    <br><br>
-    
+
     <label for="shutter">Shutter Speed (1/x):</label>
     <select id="shutter">
-        <option value="15">1/15</option>
-        <option value="30">1/30</option>
-        <option value="60">1/60</option>
-        <option value="125">1/125</option>
-        <option value="250" selected>1/250</option>
-        <option value="500">1/500</option>
-        <option value="1000">1/1000</option>
-        <option value="2000">1/2000</option>
-        <option value="4000">1/4000</option>
+      <option value="15">1/15</option>
+      <option value="30">1/30</option>
+      <option value="60">1/60</option>
+      <option value="125">1/125</option>
+      <option value="250" selected>1/250</option>
+      <option value="500">1/500</option>
+      <option value="1000">1/1000</option>
+      <option value="2000">1/2000</option>
+      <option value="4000">1/4000</option>
     </select>
-    <br><br>
-    
-    <button id="calculate">Calculate</button>
+
+    <!-- Replaced the sun icon with a Leica M3-ish icon -->
+    <button id="calculate">
+      <img
+        src="https://cdn-icons-png.flaticon.com/512/5193/5193656.png"
+        alt="Leica M3 Icon"
+      />
+      Calculate
+    </button>
+
     <p>Recommended Aperture: <span id="apertureValue"></span></p>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("calculate").addEventListener("click", calculateAperture);
+    });
+    
+    function calculateAperture() {
+      const iso = parseInt(document.getElementById("iso").value);
+      const shutterDenominator = parseFloat(document.getElementById("shutter").value);
+      const lightingCondition = document.getElementById("lightingCondition").value;
+      
+      if (isNaN(iso) || iso <= 0 || isNaN(shutterDenominator) || shutterDenominator <= 0) {
+          document.getElementById("apertureValue").innerText = 
+              "Invalid input. Make sure ISO and shutter speed are valid.";
+          return;
+      }
+      
+      // Convert from "250" to 1/250
+      const shutterSpeed = 1 / shutterDenominator;
+      
+      // Sunny16 baseline: 1/ISO at f/16
+      const baseShutter = 1 / iso;
+      
+      // Number of stops difference
+      const stopDifference = Math.log2(shutterSpeed / baseShutter);
+
+      // Lighting offsets in stops
+      // Adjusted so 'insideLowLight' is an extra stop beyond Sunset
+      const lightingOffsets = {
+        brightSnowSand: +1,   // about f/22
+        brightSun: 0,         // classic f/16
+        lightOvercast: -2,    // ~f/11
+        overcast: -3,         // ~f/8
+        heavyOvercast: -4,    // ~f/5.6
+        sunset: -5,           // ~f/4
+        insideLowLight: -6    // ~f/2.8
+      };
+
+      const conditionOffset = lightingOffsets[lightingCondition] || 0;
+      const totalStops = stopDifference + conditionOffset;
+      
+      // f-number from f/16
+      let fNumber = 16 * Math.pow(Math.sqrt(2), totalStops);
+      
+      // Snap to standard full-stop apertures
+      const standardFStops = [1.4, 2, 2.8, 4, 5.6, 8, 11, 16, 22, 32, 45, 64];
+      let closestFStop = standardFStops[0];
+      let minDiff = Infinity;
+      
+      for (let i = 0; i < standardFStops.length; i++) {
+        let diff = Math.abs(standardFStops[i] - fNumber);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestFStop = standardFStops[i];
+        }
+      }
+      
+      document.getElementById("apertureValue").innerText = `f/${closestFStop}`;
+    }
+  </script>
 </body>
 </html>
